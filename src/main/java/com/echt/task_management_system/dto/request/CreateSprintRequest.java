@@ -1,7 +1,6 @@
 package com.echt.task_management_system.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -15,7 +14,6 @@ import java.util.UUID;
 @Data
 public class CreateSprintRequest {
 
-    @NotNull(message = "Project ID is required")
     private UUID projectId;
 
     @NotBlank(message = "Sprint name is required")
