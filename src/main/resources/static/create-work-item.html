@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Create Work Item</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 24px;
+      background: #0b1220;
+      color: #e6edf3;
+    }
+    .card {
+      max-width: 720px;
+      background: #111b2e;
+      border: 1px solid #22314f;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    label { display: block; font-size: 14px; margin-bottom: 6px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #2a3b63;
+      background: #0f1930;
+      color: #e6edf3;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: #4f7cff;
+    }
+    .error {
+      color: #ff8a8a;
+      font-size: 12px;
+      margin-top: 6px;
+      min-height: 14px;
+    }
+    .success {
+      color: #7CFFB2;
+      font-size: 14px;
+      margin: 0 0 12px;
+      min-height: 18px;
+    }
+    button {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #4f7cff;
+      background: #4f7cff;
+      color: #0b1220;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.7; cursor: not-allowed; }
+    .row { display: flex; gap: 10px; align-items: center; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Create Work Item</h1>
+
+  <div id="successMsg" class="success" role="status"></div>
+
+  <form id="createForm" class="grid" novalidate>
+    <div>
+      <label for="spaceId">Space *</label>
+      <select id="spaceId" name="spaceId" required>
+        <option value="">Loading...</option>
+      </select>
+      <div id="spaceIdError" class="error"></div>
+    </div>
+
+    <div>
+      <label for="workType">Work Type *</label>
+      <select id="workType" name="workType" required>
+        <option value="">Loading...</option>
+      </select>
+      <div id="workTypeError" class="error"></div>
+    </div>
+
+    <div>
+      <label for="status">Status *</label>
+      <select id="status" name="status" required>
+        <option value="">Loading...</option>
+      </select>
+      <div id="statusError" class="error"></div>
+    </div>
+
+    <div>
+      <label for="summary">Summary *</label>
+      <input
+              id="summary"
+              name="summary"
+              type="text"
+              placeholder="Enter at least 5 characters"
+              minlength="5"
+              required
+      />
+      <div id="summaryError" class="error"></div>
+    </div>
+
+    <div class="row">
+      <button id="createBtn" type="submit">Create</button>
+    </div>
+  </form>
+  <div id="genericError" class="error" style="margin-top:12px; color:#ff8a8a;"></div>
+</div>
+
+<script>
+  const form = document.getElementById('createForm');
+  const createBtn = document.getElementById('createBtn');
+  const successMsg = document.getElementById('successMsg');
+  const genericError = document.getElementById('genericError');
+
+  const spaceIdEl = document.getElementById('spaceId');
+  const workTypeEl = document.getElementById('workType');
+  const statusEl = document.getElementById('status');
+  const summaryEl = document.getElementById('summary');
+
+  const errors = {
+    spaceId: document.getElementById('spaceIdError'),
+    workType: document.getElementById('workTypeError'),
+    status: document.getElementById('statusError'),
+    summary: document.getElementById('summaryError'),
+  };
+
+  function clearErrors() {
+    Object.values(errors).forEach(el => el.textContent = '');
+    genericError.textContent = '';
+  }
+
+  function setFieldError(field, message) {
+    if (!errors[field]) return;
+    errors[field].textContent = message || 'Invalid value';
+  }
+
+  async function loadOptions() {
+    // Space dropdown (projects) - dynamic
+    const spacesRes = await fetch('/api/spaces', { method: 'GET' });
+    if (!spacesRes.ok) throw new Error('Failed to load spaces');
+    const spacesData = await spacesRes.json();
+
+    spaceIdEl.innerHTML = '<option value="">Select space</option>';
+    for (const s of spacesData) {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      spaceIdEl.appendChild(opt);
+    }
+
+    // Work Type dropdown - fixed options (single select)
+    const workTypes = [
+      { value: 'EPIC', label: 'Epic' },
+      { value: 'STORY', label: 'Story' },
+      { value: 'TASK', label: 'Task' },
+      { value: 'BUG', label: 'Bug' },
+    ];
+    workTypeEl.innerHTML = '<option value="">Select work type</option>';
+    for (const wt of workTypes) {
+      const opt = document.createElement('option');
+      opt.value = wt.value;
+      opt.textContent = wt.label;
+      workTypeEl.appendChild(opt);
+    }
+
+    // Status dropdown - fixed options (single select)
+    // Backend accepts "TODO" via alias to DB value "TO_DO".
+    const statuses = [
+      { value: 'TODO', label: 'Todo' },
+      { value: 'IN_PROGRESS', label: 'In Progress' },
+      { value: 'IN_REVIEW', label: 'In Review' },
+      { value: 'DONE', label: 'Done' },
+    ];
+    statusEl.innerHTML = '<option value="">Select status</option>';
+    for (const st of statuses) {
+      const opt = document.createElement('option');
+      opt.value = st.value;
+      opt.textContent = st.label;
+      statusEl.appendChild(opt);
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErrors();
+    successMsg.textContent = '';
+
+    createBtn.disabled = true;
+    try {
+      const payload = {
+        spaceId: spaceIdEl.value || null,
+        workType: workTypeEl.value || null,
+        status: statusEl.value || null,
+        summary: summaryEl.value,
+      };
+
+      const res = await fetch('/api/work-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        successMsg.textContent = data.message || 'Created successfully';
+        form.reset();
+        // Clear errors after reset (keeps dropdown selections intact)
+        Object.values(errors).forEach(el => el.textContent = '');
+        return;
+      }
+
+      // Validation errors
+      const errData = await res.json().catch(() => null);
+      if (errData && errData.fieldErrors) {
+        for (const [field, msg] of Object.entries(errData.fieldErrors)) {
+          setFieldError(field, msg);
+        }
+      } else {
+        genericError.textContent = errData?.message || 'Failed to create work item';
+      }
+    } catch (err) {
+      genericError.textContent = err?.message || 'Network error';
+    } finally {
+      createBtn.disabled = false;
+    }
+  });
+
+  loadOptions().catch((err) => {
+    genericError.textContent = err?.message || 'Could not load dropdown options';
+    // Put readable placeholders
+    spaceIdEl.innerHTML = '<option value="">Unavailable</option>';
+    workTypeEl.innerHTML = '<option value="">Unavailable</option>';
+    statusEl.innerHTML = '<option value="">Unavailable</option>';
+  });
+</script>
+</body>
+</html>
+
