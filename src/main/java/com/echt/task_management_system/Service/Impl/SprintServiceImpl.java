@@ -35,8 +35,7 @@ public class SprintServiceImpl implements SprintService {
     @Override
     public SprintResponse createSprint(
             UUID projectId,
-            CreateSprintRequest request
-    ) {
+            CreateSprintRequest request) {
 
         Project project = findProject(projectId);
 
@@ -76,8 +75,7 @@ public class SprintServiceImpl implements SprintService {
     @Override
     public SprintResponse updateSprint(
             UUID sprintId,
-            UpdateSprintRequest request
-    ) {
+            UpdateSprintRequest request) {
 
         Sprint sprint = findSprint(sprintId);
 
@@ -104,21 +102,17 @@ public class SprintServiceImpl implements SprintService {
     public SprintResponse startSprint(
             UUID sprintId,
             LocalDate startDate,
-            LocalDate endDate
-    ) {
+            LocalDate endDate) {
 
         Sprint sprint = findSprint(sprintId);
 
-        boolean hasActiveSprint =
-                sprintRepository.existsByProjectIdAndStatus(
-                        sprint.getProject().getId(),
-                        Sprint.SprintStatus.ACTIVE
-                );
+        boolean hasActiveSprint = sprintRepository.existsByProjectIdAndStatus(
+                sprint.getProject().getId(),
+                Sprint.SprintStatus.ACTIVE);
 
         if (hasActiveSprint) {
             throw new IllegalStateException(
-                    "Project already has an ACTIVE sprint."
-            );
+                    "Project already has an ACTIVE sprint.");
         }
 
         sprint.start(startDate, endDate);
@@ -154,42 +148,31 @@ public class SprintServiceImpl implements SprintService {
 
         Project project = findProject(projectId);
 
-        List<WorkItem> workItems =
-                workItemRepository.findBacklogItems(projectId);
+        List<WorkItem> workItems = workItemRepository.findBacklogItems(projectId);
 
         return sprintMapper.buildBacklogResponse(
                 project,
-                workItems
-        );
+                workItems);
     }
 
     private Project findProject(UUID projectId) {
 
         return projectRepository.findById(projectId)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(
-                                "Project not found: " + projectId
-                        )
-                );
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Project not found: " + projectId));
     }
 
     private Sprint findSprint(UUID sprintId) {
 
         return sprintRepository.findById(sprintId)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(
-                                "Sprint not found: " + sprintId
-                        )
-                );
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Sprint not found: " + sprintId));
     }
 
     private Sprint findSprintWithWorkItems(UUID sprintId) {
 
         return sprintRepository.findByIdWithWorkItems(sprintId)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(
-                                "Sprint not found: " + sprintId
-                        )
-                );
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Sprint not found: " + sprintId));
     }
 }

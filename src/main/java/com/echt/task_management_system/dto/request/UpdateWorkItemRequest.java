@@ -31,4 +31,5 @@ public class UpdateWorkItemRequest {
     private LocalDate dueDate;
 
     private UUID sprintId;    // null = move to backlog
+    private WorkItem.WorkType workType;
 }
