@@ -4,18 +4,17 @@ import com.echt.task_management_system.Service.SprintService;
 import com.echt.task_management_system.dto.request.CreateSprintRequest;
 import com.echt.task_management_system.dto.request.UpdateSprintRequest;
 import com.echt.task_management_system.dto.response.SprintResponse;
-import com.echt.task_management_system.dto.response.UserSummaryResponse;
-import com.echt.task_management_system.dto.response.WorkItemSummaryResponse;
 import com.echt.task_management_system.entity.Project;
 import com.echt.task_management_system.entity.Sprint;
-import com.echt.task_management_system.entity.User;
 import com.echt.task_management_system.entity.WorkItem;
+import com.echt.task_management_system.mapper.SprintMapper;
 import com.echt.task_management_system.repository.ProjectRepository;
 import com.echt.task_management_system.repository.SprintRepository;
 import com.echt.task_management_system.repository.WorkItemRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,211 +30,166 @@ public class SprintServiceImpl implements SprintService {
     private final SprintRepository sprintRepository;
     private final WorkItemRepository workItemRepository;
     private final ProjectRepository projectRepository;
+    private final SprintMapper sprintMapper;
 
-   @Override
-public SprintResponse createSprint(
-        UUID projectId,
-        CreateSprintRequest request
-) {
+    @Override
+    public SprintResponse createSprint(
+            UUID projectId,
+            CreateSprintRequest request
+    ) {
 
-    Project project = findProject(projectId);
+        Project project = findProject(projectId);
 
-    Sprint sprint = Sprint.builder()
-            .project(project)
-            .name(request.getName())
-            .goal(request.getGoal())
-            .status(Sprint.SprintStatus.PLANNED)
-            .startDate(request.getStartDate())
-            .endDate(request.getEndDate())
-            .build();
+        Sprint sprint = Sprint.builder()
+                .project(project)
+                .name(request.getName())
+                .goal(request.getGoal())
+                .status(Sprint.SprintStatus.PLANNED)
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .build();
 
-    sprintRepository.save(sprint);
+        sprintRepository.save(sprint);
 
-    return toResponse(sprint);
-}
+        return sprintMapper.toResponse(sprint);
+    }
 
     @Override
     @Transactional(readOnly = true)
     public SprintResponse getSprintById(UUID sprintId) {
-        return toResponse(findSprintWithWorkItems(sprintId));
+
+        Sprint sprint = findSprintWithWorkItems(sprintId);
+
+        return sprintMapper.toResponse(sprint);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<SprintResponse> getSprintByProjectId(UUID projectId) {
-        return sprintRepository.findByProjectIdOrderByCreatedAtAsc(projectId).stream()
-                .map(this::toResponse)
+
+        return sprintRepository.findByProjectIdOrderByCreatedAtAsc(projectId)
+                .stream()
+                .map(sprintMapper::toResponse)
                 .toList();
     }
 
     @Override
-    public SprintResponse updateSprint(UUID sprintId, UpdateSprintRequest request) {
+    public SprintResponse updateSprint(
+            UUID sprintId,
+            UpdateSprintRequest request
+    ) {
+
         Sprint sprint = findSprint(sprintId);
+
         if (request.getName() != null) {
             sprint.setName(request.getName());
         }
+
         if (request.getGoal() != null) {
             sprint.setGoal(request.getGoal());
         }
+
         if (request.getStartDate() != null) {
             sprint.setStartDate(request.getStartDate());
         }
+
         if (request.getEndDate() != null) {
             sprint.setEndDate(request.getEndDate());
         }
-        return toResponse(sprint);
+
+        return sprintMapper.toResponse(sprint);
     }
 
     @Override
-    public SprintResponse startSprint(UUID sprintId, LocalDate startDate, LocalDate endDate) {
+    public SprintResponse startSprint(
+            UUID sprintId,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+
         Sprint sprint = findSprint(sprintId);
-        if (sprintRepository.existsByProjectIdAndStatus(sprint.getProject().getId(), Sprint.SprintStatus.ACTIVE)) {
-            throw new IllegalStateException("Project already has an ACTIVE sprint.");
+
+        boolean hasActiveSprint =
+                sprintRepository.existsByProjectIdAndStatus(
+                        sprint.getProject().getId(),
+                        Sprint.SprintStatus.ACTIVE
+                );
+
+        if (hasActiveSprint) {
+            throw new IllegalStateException(
+                    "Project already has an ACTIVE sprint."
+            );
         }
+
         sprint.start(startDate, endDate);
-        return toResponse(sprint);
+
+        return sprintMapper.toResponse(sprint);
     }
 
     @Override
     public SprintResponse completeSprint(UUID sprintId) {
+
         Sprint sprint = findSprint(sprintId);
+
         sprint.complete();
-        return toResponse(sprint);
+
+        return sprintMapper.toResponse(sprint);
     }
 
     @Override
     public void deleteSprint(UUID sprintId) {
-        Sprint sprint = findSprint(sprintId);
+
+        Sprint sprint = findSprintWithWorkItems(sprintId);
+
+        // Move work items back to backlog
+        sprint.getWorkItems()
+                .forEach(item -> item.setSprint(null));
+
         sprintRepository.delete(sprint);
     }
 
-   @Override
-@Transactional(readOnly = true)
-public SprintResponse getBacklog(UUID projectId) {
+    @Override
+    @Transactional(readOnly = true)
+    public SprintResponse getBacklog(UUID projectId) {
 
-    Project project = findProject(projectId);
+        Project project = findProject(projectId);
 
-    List<WorkItem> workItems =
-            workItemRepository.findBacklogItems(projectId);
+        List<WorkItem> workItems =
+                workItemRepository.findBacklogItems(projectId);
 
-    return buildResponse(
-            null,
-            "Backlog",
-            null,
-            null,
-            null,
-            null,
-            project,
-            workItems
-    );
-}
+        return sprintMapper.buildBacklogResponse(
+                project,
+                workItems
+        );
+    }
 
     private Project findProject(UUID projectId) {
 
-    return projectRepository.findById(projectId)
-            .orElseThrow(() ->
-                    new EntityNotFoundException(
-                            "Project not found: " + projectId
-                    )
-            );
-}
+        return projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Project not found: " + projectId
+                        )
+                );
+    }
 
     private Sprint findSprint(UUID sprintId) {
+
         return sprintRepository.findById(sprintId)
-                .orElseThrow(() -> new EntityNotFoundException("Sprint not found: " + sprintId));
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Sprint not found: " + sprintId
+                        )
+                );
     }
 
     private Sprint findSprintWithWorkItems(UUID sprintId) {
+
         return sprintRepository.findByIdWithWorkItems(sprintId)
-                .orElseThrow(() -> new EntityNotFoundException("Sprint not found: " + sprintId));
-    }
-
-    private SprintResponse toResponse(Sprint sprint) {
-        return buildResponse(
-                sprint.getId(),
-                sprint.getName(),
-                sprint.getGoal(),
-                sprint.getStatus(),
-                sprint.getStartDate(),
-                sprint.getEndDate(),
-                sprint.getProject(),
-                sprint.getWorkItems(),
-                sprint.getCreatedAt(),
-                sprint.getUpdatedAt());
-    }
-
-    private SprintResponse buildResponse(
-            UUID id,
-            String name,
-            String goal,
-            Sprint.SprintStatus status,
-            LocalDate startDate,
-            LocalDate endDate,
-            Project project,
-            List<WorkItem> workItems) {
-        return buildResponse(id, name, goal, status, startDate, endDate, project, workItems, null, null);
-    }
-
-    private SprintResponse buildResponse(
-            UUID id,
-            String name,
-            String goal,
-            Sprint.SprintStatus status,
-            LocalDate startDate,
-            LocalDate endDate,
-            Project project,
-            List<WorkItem> workItems,
-            java.time.OffsetDateTime createdAt,
-            java.time.OffsetDateTime updatedAt) {
-        List<WorkItem> items = workItems == null ? List.of() : workItems;
-
-        return SprintResponse.builder()
-                .id(id)
-                .name(name)
-                .goal(goal)
-                .status(status)
-                .startDate(startDate)
-                .endDate(endDate)
-                .projectId(project.getId())
-                .projectKey(project.getKey())
-                .workItems(items.stream().map(this::toWorkItemSummary).toList())
-                .totalItems(items.size())
-                .doneItems(countByStatus(items, WorkItem.WorkItemStatus.DONE))
-                .inProgressItems(countByStatus(items, WorkItem.WorkItemStatus.IN_PROGRESS))
-                .toDoItems(countByStatus(items, WorkItem.WorkItemStatus.TO_DO))
-                .createdAt(createdAt)
-                .updatedAt(updatedAt)
-                .build();
-    }
-
-    private int countByStatus(List<WorkItem> items, WorkItem.WorkItemStatus status) {
-        return (int) items.stream()
-                .filter(item -> item.getStatus() == status)
-                .count();
-    }
-
-    private WorkItemSummaryResponse toWorkItemSummary(WorkItem item) {
-        return WorkItemSummaryResponse.builder()
-                .id(item.getId())
-                .itemKey(item.getItemKey())
-                .workType(item.getWorkType())
-                .summary(item.getSummary())
-                .status(item.getStatus())
-                .priority(item.getPriority())
-                .storyPoints(item.getStoryPoints())
-                .assignee(toUserSummary(item.getAssignee()))
-                .build();
-    }
-
-    private UserSummaryResponse toUserSummary(User user) {
-        if (user == null) {
-            return null;
-        }
-        return UserSummaryResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .displayName(user.getDisplayName())
-                .avatarUrl(user.getAvatarUrl())
-                .build();
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Sprint not found: " + sprintId
+                        )
+                );
     }
 }
