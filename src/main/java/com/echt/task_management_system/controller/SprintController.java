@@ -38,17 +38,24 @@ public class SprintController {
     private final SprintService sprintService;
 
     @PostMapping("/projects/{projectId}/sprints")
-    @Operation(
-            summary = "Create sprint",
-            description = "Creates a planned sprint for the selected project."
-    )
-    public ResponseEntity<CreateSprintRequest> createSprint(
-            @Parameter(description = "Project ID that will own the sprint", required = true)
-            @PathVariable UUID projectId,
-            @Valid @RequestBody CreateSprintRequest request) {
-        request.setProjectId(projectId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(sprintService.createSprint(request));
-    }
+@Operation(
+        summary = "Create sprint",
+        description = "Creates a planned sprint for the selected project."
+)
+public ResponseEntity<SprintResponse> createSprint(
+
+        @Parameter(
+                description = "Project ID that will own the sprint",
+                required = true
+        )
+        @PathVariable UUID projectId,
+
+        @Valid @RequestBody CreateSprintRequest request
+) {
+
+    return ResponseEntity.status(HttpStatus.CREATED)
+            .body(sprintService.createSprint(projectId, request));
+}
 
     @GetMapping("/sprints/{sprintId}")
     @Operation(

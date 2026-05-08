@@ -9,12 +9,10 @@ import java.util.UUID;
 
 // ─── Create Sprint ────────────────────────────────────────────────────────────
 /**
- * Used by Dhananjay's POST /projects/{projectId}/sprints endpoint.
+ * Used by POST /projects/{projectId}/sprints endpoint.
  */
 @Data
 public class CreateSprintRequest {
-
-    private UUID projectId;
 
     @NotBlank(message = "Sprint name is required")
     @Size(max = 100, message = "Sprint name must be at most 100 characters")

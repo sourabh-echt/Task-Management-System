@@ -8,10 +8,6 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.util.UUID;
 
-/**
- * Used by Sourabh's POST /projects/{projectId}/work-items endpoint.
- * Maps directly to the "Create Task" modal visible in the UI screenshots.
- */
 @Data
 public class CreateWorkItemRequest {
 

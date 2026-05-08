@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.micrometer.common.lang.Nullable;
+
 /**
  * WorkItem entity — belongs to Sourabh's Create-Task Module.
  *

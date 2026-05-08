@@ -9,7 +9,10 @@ import com.echt.task_management_system.dto.request.UpdateSprintRequest;
 import com.echt.task_management_system.dto.response.SprintResponse;
 
 public interface SprintService {
-    CreateSprintRequest createSprint(CreateSprintRequest request);
+    SprintResponse createSprint(
+        UUID projectId,
+        CreateSprintRequest request
+);
     SprintResponse getSprintById(UUID sprintId);
     List<SprintResponse> getSprintByProjectId(UUID projectId);
     SprintResponse updateSprint(UUID sprintId, UpdateSprintRequest request);

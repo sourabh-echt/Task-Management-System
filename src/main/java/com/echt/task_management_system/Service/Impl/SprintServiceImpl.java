@@ -10,8 +10,10 @@ import com.echt.task_management_system.entity.Project;
 import com.echt.task_management_system.entity.Sprint;
 import com.echt.task_management_system.entity.User;
 import com.echt.task_management_system.entity.WorkItem;
+import com.echt.task_management_system.repository.ProjectRepository;
 import com.echt.task_management_system.repository.SprintRepository;
-import jakarta.persistence.EntityManager;
+import com.echt.task_management_system.repository.WorkItemRepository;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,23 +29,30 @@ import java.util.UUID;
 public class SprintServiceImpl implements SprintService {
 
     private final SprintRepository sprintRepository;
-    private final EntityManager entityManager;
+    private final WorkItemRepository workItemRepository;
+    private final ProjectRepository projectRepository;
 
-    @Override
-    public CreateSprintRequest createSprint(CreateSprintRequest request) {
-        Project project = findProject(request.getProjectId());
-        Sprint sprint = Sprint.builder()
-                .project(project)
-                .name(request.getName())
-                .goal(request.getGoal())
-                .status(Sprint.SprintStatus.PLANNED)
-                .startDate(request.getStartDate())
-                .endDate(request.getEndDate())
-                .build();
+   @Override
+public SprintResponse createSprint(
+        UUID projectId,
+        CreateSprintRequest request
+) {
 
-        sprintRepository.save(sprint);
-        return request;
-    }
+    Project project = findProject(projectId);
+
+    Sprint sprint = Sprint.builder()
+            .project(project)
+            .name(request.getName())
+            .goal(request.getGoal())
+            .status(Sprint.SprintStatus.PLANNED)
+            .startDate(request.getStartDate())
+            .endDate(request.getEndDate())
+            .build();
+
+    sprintRepository.save(sprint);
+
+    return toResponse(sprint);
+}
 
     @Override
     @Transactional(readOnly = true)
@@ -100,29 +109,36 @@ public class SprintServiceImpl implements SprintService {
         sprintRepository.delete(sprint);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public SprintResponse getBacklog(UUID projectId) {
-        Project project = findProject(projectId);
-        List<WorkItem> workItems = entityManager.createQuery("""
-                        SELECT w FROM WorkItem w
-                        LEFT JOIN FETCH w.assignee
-                        WHERE w.project.id = :projectId AND w.sprint IS NULL
-                        ORDER BY w.createdAt ASC
-                        """, WorkItem.class)
-                .setParameter("projectId", projectId)
-                .getResultList();
+   @Override
+@Transactional(readOnly = true)
+public SprintResponse getBacklog(UUID projectId) {
 
-        return buildResponse(null, "Backlog", null, null, null, null, project, workItems);
-    }
+    Project project = findProject(projectId);
+
+    List<WorkItem> workItems =
+            workItemRepository.findBacklogItems(projectId);
+
+    return buildResponse(
+            null,
+            "Backlog",
+            null,
+            null,
+            null,
+            null,
+            project,
+            workItems
+    );
+}
 
     private Project findProject(UUID projectId) {
-        Project project = entityManager.find(Project.class, projectId);
-        if (project == null) {
-            throw new EntityNotFoundException("Project not found: " + projectId);
-        }
-        return project;
-    }
+
+    return projectRepository.findById(projectId)
+            .orElseThrow(() ->
+                    new EntityNotFoundException(
+                            "Project not found: " + projectId
+                    )
+            );
+}
 
     private Sprint findSprint(UUID sprintId) {
         return sprintRepository.findById(sprintId)
