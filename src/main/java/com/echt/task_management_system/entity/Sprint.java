@@ -7,11 +7,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Sprint entity — belongs to Dhananjay's Sprint Module.
- *
- * Maps to the `sprints` table.
- */
+
 @Entity
 @Table(name = "sprints")
 @Getter

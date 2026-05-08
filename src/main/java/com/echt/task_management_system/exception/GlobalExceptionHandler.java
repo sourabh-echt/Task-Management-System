@@ -1,6 +1,7 @@
 package com.echt.task_management_system.exception;
 
-import com.echt.task_management_system.dto.ApiErrorResponse;
+import com.echt.task_management_system.common.response.ApiErrorResponse;
+import com.echt.task_management_system.common.response.ErrorCode;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -25,19 +26,17 @@ public class GlobalExceptionHandler {
 
         ex.getFieldErrors().forEach(err -> fieldErrors.put(err.getField(), err.getDefaultMessage()));
 
-        return ResponseEntity.badRequest().body(new ApiErrorResponse("Validation failed", fieldErrors));
+        return error(HttpStatus.BAD_REQUEST, "Validation failed", ErrorCode.VALIDATION_FAILED, fieldErrors);
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNotFound(EntityNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ApiErrorResponse(ex.getMessage(), Map.of()));
+        return error(HttpStatus.NOT_FOUND, ex.getMessage(), ErrorCode.RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest()
-                .body(new ApiErrorResponse(ex.getMessage(), Map.of()));
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage(), ErrorCode.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -50,11 +49,20 @@ public class GlobalExceptionHandler {
         if (lower.contains("spaceId".toLowerCase()) || lower.contains("space id".toLowerCase())) {
             fieldErrors.put("spaceId", "spaceId must be a valid UUID");
         }
+        if (lower.contains("assigneeId".toLowerCase()) || lower.contains("assignee id".toLowerCase())) {
+            fieldErrors.put("assigneeId", "assigneeId must be a valid UUID");
+        }
+        if (lower.contains("reporterId".toLowerCase()) || lower.contains("reporter id".toLowerCase())) {
+            fieldErrors.put("reporterId", "reporterId must be a valid UUID");
+        }
         if (lower.contains("workType".toLowerCase()) || lower.contains("work type".toLowerCase())) {
             fieldErrors.put("workType", "workType must be one of EPIC, STORY, TASK, BUG");
         }
         if (lower.contains("status".toLowerCase())) {
-            fieldErrors.put("status", "status must be one of TO_DO, IN_PROGRESS, IN_REVIEW, DONE");
+            fieldErrors.put("status", "status must be one of TO_DO, TODO, IN_PROGRESS, IN_REVIEW, DONE");
+        }
+        if (lower.contains("priority".toLowerCase())) {
+            fieldErrors.put("priority", "priority must be one of LOWEST, LOW, MEDIUM, HIGH, HIGHEST");
         }
 
         // If we couldn't attribute to a specific field, still return a useful error body.
@@ -62,20 +70,25 @@ public class GlobalExceptionHandler {
             fieldErrors = Collections.emptyMap();
         }
 
-        return ResponseEntity.badRequest().body(new ApiErrorResponse("Malformed JSON request", fieldErrors));
+        Object details = fieldErrors.isEmpty() ? "Request body is invalid or unreadable" : fieldErrors;
+        return error(HttpStatus.BAD_REQUEST, "Malformed JSON request", ErrorCode.MALFORMED_JSON, details);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleConflict(DataIntegrityViolationException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ApiErrorResponse("Conflict", Map.of()));
+        return error(HttpStatus.CONFLICT, "Conflict", ErrorCode.DATA_INTEGRITY_VIOLATION,
+                "Request conflicts with existing data");
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnhandled(Exception ex) {
         log.error("Unhandled exception", ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiErrorResponse("Internal server error", Map.of()));
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", ErrorCode.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred");
+    }
+
+    private ResponseEntity<ApiErrorResponse> error(HttpStatus status, String message, ErrorCode errorCode, Object details) {
+        return ResponseEntity.status(status)
+                .body(ApiErrorResponse.failure(message, errorCode, details));
     }
 }
-

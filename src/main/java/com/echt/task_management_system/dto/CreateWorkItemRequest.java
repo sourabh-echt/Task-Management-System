@@ -19,7 +19,10 @@ public record CreateWorkItemRequest(
 
         @NotBlank(message = "Summary is required")
         @Size(min = 5, message = "Summary must be at least 5 characters")
-        String summary
+        String summary,
+
+        UUID assigneeId,
+
+        UUID reporterId
 ) {
 }
-

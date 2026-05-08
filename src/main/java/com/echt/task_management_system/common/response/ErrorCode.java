@@ -1,0 +1,13 @@
+package com.echt.task_management_system.common.response;
+
+public enum ErrorCode {
+    BAD_REQUEST,
+    DATA_INTEGRITY_VIOLATION,
+    INTERNAL_SERVER_ERROR,
+    MALFORMED_JSON,
+    METHOD_NOT_ALLOWED,
+    REQUEST_FAILED,
+    RESOURCE_NOT_FOUND,
+    UNSUPPORTED_MEDIA_TYPE,
+    VALIDATION_FAILED
+}

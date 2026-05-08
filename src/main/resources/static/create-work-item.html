@@ -3,117 +3,271 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Create Work Item</title>
+  <title>Work Items</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       font-family: Arial, Helvetica, sans-serif;
-      margin: 24px;
-      background: #0b1220;
-      color: #e6edf3;
+      margin: 0;
+      background: #1f1f21;
+      color: #f1f5ff;
     }
-    .card {
-      max-width: 720px;
-      background: #111b2e;
-      border: 1px solid #22314f;
-      border-radius: 10px;
-      padding: 20px;
+    .page {
+      display: grid;
+      gap: 18px;
+      padding: 24px;
     }
-    h1 { font-size: 20px; margin: 0 0 16px; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
-    label { display: block; font-size: 14px; margin-bottom: 6px; }
-    input, select, textarea {
-      width: 100%;
-      padding: 10px 12px;
+    .panel {
+      max-width: 960px;
+      border: 1px solid #34363a;
       border-radius: 8px;
-      border: 1px solid #2a3b63;
-      background: #0f1930;
-      color: #e6edf3;
+      background: #18191b;
+      padding: 18px;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0 0 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr)) auto;
+      gap: 12px;
+      align-items: end;
+    }
+    label {
+      display: block;
+      color: #c9d3e2;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    input, select {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid #3c4046;
+      border-radius: 4px;
+      background: #111214;
+      color: #f1f5ff;
+      padding: 8px 10px;
       outline: none;
     }
     input:focus, select:focus {
-      border-color: #4f7cff;
-    }
-    .error {
-      color: #ff8a8a;
-      font-size: 12px;
-      margin-top: 6px;
-      min-height: 14px;
-    }
-    .success {
-      color: #7CFFB2;
-      font-size: 14px;
-      margin: 0 0 12px;
-      min-height: 18px;
+      border-color: #579dff;
     }
     button {
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: 1px solid #4f7cff;
-      background: #4f7cff;
-      color: #0b1220;
-      font-weight: 700;
+      min-height: 36px;
+      border: 1px solid #579dff;
+      border-radius: 4px;
+      background: #579dff;
+      color: #07111f;
       cursor: pointer;
+      font-weight: 700;
+      padding: 0 16px;
+      white-space: nowrap;
     }
-    button:disabled { opacity: 0.7; cursor: not-allowed; }
-    .row { display: flex; gap: 10px; align-items: center; }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .65;
+    }
+    .error {
+      min-height: 14px;
+      color: #ff9b9b;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    .success {
+      min-height: 18px;
+      color: #9df2bd;
+      font-size: 14px;
+      margin: 0 0 12px;
+    }
+    .table-shell {
+      width: 100%;
+      overflow: auto;
+      border: 1px solid #34363a;
+      border-radius: 8px;
+      background: #1f1f21;
+    }
+    table {
+      min-width: 1420px;
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    thead th {
+      height: 40px;
+      color: #c3d0df;
+      background: #151617;
+      border-bottom: 1px solid #34363a;
+      border-right: 1px solid #34363a;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0 8px;
+      text-align: left;
+    }
+    tbody td {
+      height: 40px;
+      border-bottom: 1px solid #34363a;
+      border-right: 1px solid #34363a;
+      color: #f1f5ff;
+      font-size: 14px;
+      padding: 0 8px;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    tbody tr:hover {
+      background: #24262a;
+    }
+    .work-col { width: 450px; }
+    .person-col { width: 200px; }
+    .priority-col { width: 140px; }
+    .status-col { width: 140px; }
+    .date-col { width: 200px; }
+    .tools-col { width: 48px; text-align: center; }
+    .work-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .issue-key {
+      color: #579dff;
+      text-decoration: underline;
+      flex: 0 0 auto;
+    }
+    .summary {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .type-icon {
+      width: 14px;
+      height: 14px;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 700;
+    }
+    .type-TASK { color: #579dff; }
+    .type-BUG { color: #ff7452; }
+    .type-STORY { color: #94c748; }
+    .type-EPIC { color: #bf63f3; }
+    .avatar {
+      width: 24px;
+      height: 24px;
+      display: inline-grid;
+      place-items: center;
+      margin-right: 8px;
+      border-radius: 50%;
+      color: #c8d1dc;
+      background: #4a4d52;
+      font-size: 13px;
+    }
+    .priority-mark {
+      color: #ff8b00;
+      display: inline-block;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+    .status-badge {
+      border: 0;
+      border-radius: 4px;
+      color: #07111f;
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 18px;
+      padding: 0 6px;
+    }
+    .status-TO_DO { background: #e9edf2; }
+    .status-IN_PROGRESS, .status-IN_REVIEW { background: #9cc4ff; }
+    .status-DONE { background: #b8f27d; }
+    .empty {
+      color: #aeb8c4;
+      padding: 22px;
+      text-align: center;
+    }
+    @media (max-width: 920px) {
+      .page { padding: 14px; }
+      .grid { grid-template-columns: 1fr; }
+      .panel { max-width: none; }
+    }
   </style>
 </head>
 <body>
-<div class="card">
-  <h1>Create Work Item</h1>
+<main class="page">
+  <section class="panel">
+    <h1>Create Work Item</h1>
+    <div id="successMsg" class="success" role="status"></div>
 
-  <div id="successMsg" class="success" role="status"></div>
+    <form id="createForm" class="grid" novalidate>
+      <div>
+        <label for="spaceId">Space *</label>
+        <select id="spaceId" name="spaceId" required>
+          <option value="">Loading...</option>
+        </select>
+        <div id="spaceIdError" class="error"></div>
+      </div>
 
-  <form id="createForm" class="grid" novalidate>
-    <div>
-      <label for="spaceId">Space *</label>
-      <select id="spaceId" name="spaceId" required>
-        <option value="">Loading...</option>
-      </select>
-      <div id="spaceIdError" class="error"></div>
-    </div>
+      <div>
+        <label for="workType">Work Type *</label>
+        <select id="workType" name="workType" required>
+          <option value="">Loading...</option>
+        </select>
+        <div id="workTypeError" class="error"></div>
+      </div>
 
-    <div>
-      <label for="workType">Work Type *</label>
-      <select id="workType" name="workType" required>
-        <option value="">Loading...</option>
-      </select>
-      <div id="workTypeError" class="error"></div>
-    </div>
+      <div>
+        <label for="status">Status *</label>
+        <select id="status" name="status" required>
+          <option value="">Loading...</option>
+        </select>
+        <div id="statusError" class="error"></div>
+      </div>
 
-    <div>
-      <label for="status">Status *</label>
-      <select id="status" name="status" required>
-        <option value="">Loading...</option>
-      </select>
-      <div id="statusError" class="error"></div>
-    </div>
+      <div>
+        <label for="summary">Summary *</label>
+        <input id="summary" name="summary" type="text" placeholder="Enter at least 5 characters" minlength="5" required />
+        <div id="summaryError" class="error"></div>
+      </div>
 
-    <div>
-      <label for="summary">Summary *</label>
-      <input
-              id="summary"
-              name="summary"
-              type="text"
-              placeholder="Enter at least 5 characters"
-              minlength="5"
-              required
-      />
-      <div id="summaryError" class="error"></div>
-    </div>
-
-    <div class="row">
       <button id="createBtn" type="submit">Create</button>
-    </div>
-  </form>
-  <div id="genericError" class="error" style="margin-top:12px; color:#ff8a8a;"></div>
-</div>
+    </form>
+    <div id="genericError" class="error"></div>
+  </section>
+
+  <section class="table-shell" aria-label="Work items">
+    <table>
+      <thead>
+      <tr>
+        <th class="work-col">Work</th>
+        <th class="person-col">Assignee</th>
+        <th class="person-col">Reporter</th>
+        <th class="priority-col">Priority</th>
+        <th class="status-col">Status</th>
+        <th class="date-col">Created</th>
+        <th class="date-col">Updated</th>
+        <th class="tools-col">|||</th>
+      </tr>
+      </thead>
+      <tbody id="workItemsBody">
+      <tr>
+        <td colspan="8" class="empty">Loading work items...</td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+</main>
 
 <script>
   const form = document.getElementById('createForm');
   const createBtn = document.getElementById('createBtn');
   const successMsg = document.getElementById('successMsg');
   const genericError = document.getElementById('genericError');
+  const workItemsBody = document.getElementById('workItemsBody');
 
   const spaceIdEl = document.getElementById('spaceId');
   const workTypeEl = document.getElementById('workType');
@@ -127,6 +281,13 @@
     summary: document.getElementById('summaryError'),
   };
 
+  const workTypeIcons = {
+    TASK: '☑',
+    BUG: '◆',
+    STORY: '▱',
+    EPIC: '✦',
+  };
+
   function clearErrors() {
     Object.values(errors).forEach(el => el.textContent = '');
     genericError.textContent = '';
@@ -137,11 +298,24 @@
     errors[field].textContent = message || 'Invalid value';
   }
 
+  async function apiFetch(path, options = {}) {
+    const primary = await fetch(`/api${path}`, options);
+    if (primary.status !== 404) {
+      return primary;
+    }
+    return fetch(path, options);
+  }
+
+  function responseData(responseBody) {
+    return responseBody && Object.prototype.hasOwnProperty.call(responseBody, 'data')
+      ? responseBody.data
+      : responseBody;
+  }
+
   async function loadOptions() {
-    // Space dropdown (projects) - dynamic
-    const spacesRes = await fetch('/api/spaces', { method: 'GET' });
+    const spacesRes = await apiFetch('/spaces', { method: 'GET' });
     if (!spacesRes.ok) throw new Error('Failed to load spaces');
-    const spacesData = await spacesRes.json();
+    const spacesData = responseData(await spacesRes.json()) || [];
 
     spaceIdEl.innerHTML = '<option value="">Select space</option>';
     for (const s of spacesData) {
@@ -151,7 +325,6 @@
       spaceIdEl.appendChild(opt);
     }
 
-    // Work Type dropdown - fixed options (single select)
     const workTypes = [
       { value: 'EPIC', label: 'Epic' },
       { value: 'STORY', label: 'Story' },
@@ -166,8 +339,6 @@
       workTypeEl.appendChild(opt);
     }
 
-    // Status dropdown - fixed options (single select)
-    // Backend accepts "TODO" via alias to DB value "TO_DO".
     const statuses = [
       { value: 'TODO', label: 'Todo' },
       { value: 'IN_PROGRESS', label: 'In Progress' },
@@ -181,6 +352,72 @@
       opt.textContent = st.label;
       statusEl.appendChild(opt);
     }
+  }
+
+  async function loadWorkItems() {
+    const res = await apiFetch('/work-items', { method: 'GET' });
+    if (!res.ok) throw new Error('Failed to load work items');
+    const items = responseData(await res.json()) || [];
+    renderWorkItems(items);
+  }
+
+  function renderWorkItems(items) {
+    if (!items.length) {
+      workItemsBody.innerHTML = '<tr><td colspan="8" class="empty">No work items created yet.</td></tr>';
+      return;
+    }
+
+    workItemsBody.innerHTML = '';
+    for (const item of items) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td title="${escapeHtml(item.summary)}">
+          <div class="work-cell">
+            <span class="type-icon type-${item.workType}">${workTypeIcons[item.workType] || '☑'}</span>
+            <span class="issue-key">${escapeHtml(item.itemKey)}</span>
+            <span class="summary">${escapeHtml(item.summary)}</span>
+          </div>
+        </td>
+        <td><span class="avatar">♡</span>${escapeHtml(item.assignee || 'Unassigned')}</td>
+        <td><span class="avatar">♡</span>${escapeHtml(item.reporter || 'Unassigned')}</td>
+        <td><span class="priority-mark">=</span>${titleCase(item.priority)}</td>
+        <td><span class="status-badge status-${item.status}">${formatStatus(item.status)}⌄</span></td>
+        <td>${formatDate(item.createdAt)}</td>
+        <td>${formatDate(item.updatedAt)}</td>
+        <td></td>
+      `;
+      workItemsBody.appendChild(tr);
+    }
+  }
+
+  function formatDate(value) {
+    if (!value) return '';
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(new Date(value));
+  }
+
+  function formatStatus(value) {
+    return String(value || '').replaceAll('_', ' ');
+  }
+
+  function titleCase(value) {
+    const text = String(value || '').toLowerCase().replaceAll('_', ' ');
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
   }
 
   form.addEventListener('submit', async (e) => {
@@ -197,25 +434,25 @@
         summary: summaryEl.value,
       };
 
-      const res = await fetch('/api/work-items', {
+      const res = await apiFetch('/work-items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (res.ok) {
-        const data = await res.json();
-        successMsg.textContent = data.message || 'Created successfully';
+        const response = await res.json();
+        successMsg.textContent = response.message || 'Created successfully';
         form.reset();
-        // Clear errors after reset (keeps dropdown selections intact)
         Object.values(errors).forEach(el => el.textContent = '');
+        await loadWorkItems();
         return;
       }
 
-      // Validation errors
       const errData = await res.json().catch(() => null);
-      if (errData && errData.fieldErrors) {
-        for (const [field, msg] of Object.entries(errData.fieldErrors)) {
+      const fieldErrors = errData?.error?.details;
+      if (fieldErrors && typeof fieldErrors === 'object') {
+        for (const [field, msg] of Object.entries(fieldErrors)) {
           setFieldError(field, msg);
         }
       } else {
@@ -228,14 +465,13 @@
     }
   });
 
-  loadOptions().catch((err) => {
-    genericError.textContent = err?.message || 'Could not load dropdown options';
-    // Put readable placeholders
+  Promise.all([loadOptions(), loadWorkItems()]).catch((err) => {
+    genericError.textContent = err?.message || 'Could not load page data';
     spaceIdEl.innerHTML = '<option value="">Unavailable</option>';
     workTypeEl.innerHTML = '<option value="">Unavailable</option>';
     statusEl.innerHTML = '<option value="">Unavailable</option>';
+    workItemsBody.innerHTML = '<tr><td colspan="8" class="empty">Could not load work items.</td></tr>';
   });
 </script>
 </body>
 </html>
-
