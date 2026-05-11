@@ -1,4 +1,4 @@
-package com.echt.task_management_system.dto;
+package com.echt.task_management_system.dto.response;
 
 import com.echt.task_management_system.entity.WorkItem;
 

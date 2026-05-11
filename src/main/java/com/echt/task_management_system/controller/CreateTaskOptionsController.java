@@ -1,6 +1,6 @@
 package com.echt.task_management_system.controller;
 
-import com.echt.task_management_system.dto.CreateTaskOptionsResponse;
+import com.echt.task_management_system.dto.response.CreateTaskOptionsResponse;
 import com.echt.task_management_system.service.CreateTaskOptionsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

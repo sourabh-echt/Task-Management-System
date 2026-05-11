@@ -1,6 +1,6 @@
 package com.echt.task_management_system.controller;
 
-import com.echt.task_management_system.dto.SpaceResponse;
+import com.echt.task_management_system.dto.response.SpaceResponse;
 import com.echt.task_management_system.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

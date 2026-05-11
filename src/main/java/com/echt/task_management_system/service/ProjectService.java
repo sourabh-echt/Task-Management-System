@@ -1,8 +1,9 @@
 package com.echt.task_management_system.service;
 
-import com.echt.task_management_system.dto.CreateProjectRequest;
-import com.echt.task_management_system.dto.CreateProjectResponse;
-import com.echt.task_management_system.dto.ProjectResponse;
+import com.echt.task_management_system.dto.request.CreateProjectRequest;
+import com.echt.task_management_system.dto.response.CreateProjectResponse;
+import com.echt.task_management_system.dto.response.ProjectResponse;
+import com.echt.task_management_system.dto.response.SpaceResponse;
 import com.echt.task_management_system.entity.Project;
 import com.echt.task_management_system.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,16 @@ public class ProjectService {
         return projectRepository.findAllByOrderByNameAsc()
                 .stream()
                 .map(p -> new ProjectResponse(p.getId(), p.getKey(), p.getName()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SpaceResponse> getSpaces() {
+        // Current domain model doesn't have a separate "Space" entity.
+        // Expose projects as spaces for UI dropdown compatibility.
+        return projectRepository.findAllByOrderByNameAsc()
+                .stream()
+                .map(p -> new SpaceResponse(p.getId(), p.getName()))
                 .toList();
     }
 }

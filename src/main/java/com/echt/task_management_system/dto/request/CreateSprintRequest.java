@@ -1,0 +1,25 @@
+package com.echt.task_management_system.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+import java.time.LocalDate;
+
+// ─── Create Sprint ────────────────────────────────────────────────────────────
+/**
+ * Used by POST /projects/{projectId}/sprints endpoint.
+ */
+@Data
+public class CreateSprintRequest {
+
+    @NotBlank(message = "Sprint name is required")
+    @Size(max = 100, message = "Sprint name must be at most 100 characters")
+    private String name;
+
+    @Size(max = 500, message = "Sprint goal must be at most 500 characters")
+    private String goal;
+
+    private LocalDate startDate;
+    private LocalDate endDate;
+}

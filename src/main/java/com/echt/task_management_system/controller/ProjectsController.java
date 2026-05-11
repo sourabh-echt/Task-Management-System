@@ -1,8 +1,8 @@
 package com.echt.task_management_system.controller;
 
-import com.echt.task_management_system.dto.CreateProjectRequest;
-import com.echt.task_management_system.dto.CreateProjectResponse;
-import com.echt.task_management_system.dto.ProjectResponse;
+import com.echt.task_management_system.dto.request.CreateProjectRequest;
+import com.echt.task_management_system.dto.response.CreateProjectResponse;
+import com.echt.task_management_system.dto.response.ProjectResponse;
 import com.echt.task_management_system.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

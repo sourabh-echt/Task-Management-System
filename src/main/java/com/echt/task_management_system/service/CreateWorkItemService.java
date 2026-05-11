@@ -1,11 +1,11 @@
 package com.echt.task_management_system.service;
 
-import com.echt.task_management_system.dto.CreateWorkItemRequest;
-import com.echt.task_management_system.dto.CreateWorkItemResponse;
-import com.echt.task_management_system.dto.DeleteWorkItemResponse;
-import com.echt.task_management_system.dto.UpdateWorkItemRequest;
-import com.echt.task_management_system.dto.UpdateWorkItemResponse;
-import com.echt.task_management_system.dto.WorkItemListResponse;
+import com.echt.task_management_system.dto.request.CreateWorkItemRequest;
+import com.echt.task_management_system.dto.request.UpdateWorkItemRequest;
+import com.echt.task_management_system.dto.response.CreateWorkItemResponse;
+import com.echt.task_management_system.dto.response.DeleteWorkItemResponse;
+import com.echt.task_management_system.dto.response.UpdateWorkItemResponse;
+import com.echt.task_management_system.dto.response.WorkItemListResponse;
 import com.echt.task_management_system.entity.Project;
 import com.echt.task_management_system.entity.User;
 import com.echt.task_management_system.entity.WorkItem;
@@ -33,11 +33,17 @@ public class CreateWorkItemService {
     @Transactional
     public CreateWorkItemResponse create(CreateWorkItemRequest request) {
         log.debug("Create work item request received spaceId={} workType={} status={} assigneeId={} reporterId={}",
-                request.spaceId(), request.workType(), request.status(), request.assigneeId(), request.reporterId());
-        Project project = projectRepository.findById(request.spaceId())
-                .orElseThrow(() -> new EntityNotFoundException("Project not found for id=" + request.spaceId()));
-        User assignee = resolveUser(request.assigneeId(), "Assignee");
-        User reporter = resolveUser(request.reporterId(), "Reporter");
+                request.getSpaceId(), request.getWorkType(), request.getStatus(), request.getAssigneeId(), request.getReporterId());
+
+        if (request.getSpaceId() == null) {
+            throw new IllegalArgumentException("spaceId is required");
+        }
+
+        Project project = projectRepository.findById(request.getSpaceId())
+                .orElseThrow(() -> new EntityNotFoundException("Project not found for id=" + request.getSpaceId()));
+
+        User assignee = resolveUser(request.getAssigneeId(), "Assignee");
+        User reporter = resolveUser(request.getReporterId(), "Reporter");
 
         String itemKey = generateUniqueItemKey(project.getKey());
 
@@ -45,20 +51,20 @@ public class CreateWorkItemService {
                 .project(project)
                 .sprint(null) // backlog
                 .itemKey(itemKey)
-                .workType(request.workType())
-                .summary(request.summary())
-                .description(null)
-                .status(request.status())
-                .priority(WorkItem.Priority.MEDIUM)
+                .workType(request.getWorkType())
+                .summary(request.getSummary())
+                .description(request.getDescription())
+                .status(request.getStatus() == null ? WorkItem.WorkItemStatus.TO_DO : request.getStatus())
+                .priority(request.getPriority() == null ? WorkItem.Priority.MEDIUM : request.getPriority())
                 .assignee(assignee)
                 .reporter(reporter)
-                .storyPoints(null)
-                .dueDate(null)
+                .storyPoints(request.getStoryPoints())
+                .dueDate(request.getDueDate())
                 .build();
 
         WorkItem saved = workItemRepository.save(workItem);
         log.info("Created work item id={} itemKey={} projectKey={} assigneeId={} reporterId={}",
-                saved.getId(), saved.getItemKey(), project.getKey(), request.assigneeId(), request.reporterId());
+                saved.getId(), saved.getItemKey(), project.getKey(), request.getAssigneeId(), request.getReporterId());
         return new CreateWorkItemResponse(
                 saved.getId(),
                 saved.getItemKey(),
@@ -96,9 +102,9 @@ public class CreateWorkItemService {
         WorkItem workItem = workItemRepository.findById(workItemId)
                 .orElseThrow(() -> new EntityNotFoundException("Work item not found for id=" + workItemId));
 
-        WorkItem.WorkItemStatus status = parseStatus(request.status());
-        WorkItem.Priority priority = parsePriority(request.priority());
-        UUID assigneeId = parseUuid(request.assigneeId(), "assigneeId");
+        WorkItem.WorkItemStatus status = request.getStatus();
+        WorkItem.Priority priority = request.getPriority();
+        UUID assigneeId = request.getAssigneeId();
 
         if (status != null) {
             workItem.setStatus(status);
@@ -137,52 +143,6 @@ public class CreateWorkItemService {
                 workItem.getItemKey(),
                 "Work item deleted successfully"
         );
-    }
-
-    private WorkItem.WorkItemStatus parseStatus(String value) {
-        String normalized = normalize(value);
-        if (normalized == null) {
-            return null;
-        }
-        if ("TODO".equals(normalized)) {
-            return WorkItem.WorkItemStatus.TO_DO;
-        }
-        try {
-            return WorkItem.WorkItemStatus.valueOf(normalized);
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("status must be one of TO_DO, TODO, IN_PROGRESS, IN_REVIEW, DONE");
-        }
-    }
-
-    private WorkItem.Priority parsePriority(String value) {
-        String normalized = normalize(value);
-        if (normalized == null) {
-            return null;
-        }
-        try {
-            return WorkItem.Priority.valueOf(normalized);
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("priority must be one of LOWEST, LOW, MEDIUM, HIGH, HIGHEST");
-        }
-    }
-
-    private UUID parseUuid(String value, String fieldName) {
-        String normalized = normalize(value);
-        if (normalized == null) {
-            return null;
-        }
-        try {
-            return UUID.fromString(normalized);
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException(fieldName + " must be a valid UUID");
-        }
-    }
-
-    private String normalize(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim().toUpperCase();
     }
 
     private String userLabel(User user, String fallback) {
