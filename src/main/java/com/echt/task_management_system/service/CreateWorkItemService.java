@@ -2,6 +2,7 @@ package com.echt.task_management_system.service;
 
 import com.echt.task_management_system.dto.CreateWorkItemRequest;
 import com.echt.task_management_system.dto.CreateWorkItemResponse;
+import com.echt.task_management_system.dto.DeleteWorkItemResponse;
 import com.echt.task_management_system.dto.UpdateWorkItemRequest;
 import com.echt.task_management_system.dto.UpdateWorkItemResponse;
 import com.echt.task_management_system.dto.WorkItemListResponse;
@@ -120,6 +121,21 @@ public class CreateWorkItemService {
                 saved.getPriority(),
                 userLabel(saved.getAssignee(), "Unassigned"),
                 "Work item updated successfully"
+        );
+    }
+
+    @Transactional
+    public DeleteWorkItemResponse delete(UUID workItemId) {
+        WorkItem workItem = workItemRepository.findById(workItemId)
+                .orElseThrow(() -> new EntityNotFoundException("Work item not found for id=" + workItemId));
+
+        workItemRepository.delete(workItem);
+        log.info("Deleted work item id={} itemKey={}", workItem.getId(), workItem.getItemKey());
+
+        return new DeleteWorkItemResponse(
+                workItem.getId(),
+                workItem.getItemKey(),
+                "Work item deleted successfully"
         );
     }
 

@@ -2,6 +2,7 @@ package com.echt.task_management_system.service;
 
 import com.echt.task_management_system.dto.CreateWorkItemRequest;
 import com.echt.task_management_system.dto.CreateWorkItemResponse;
+import com.echt.task_management_system.dto.DeleteWorkItemResponse;
 import com.echt.task_management_system.dto.UpdateWorkItemRequest;
 import com.echt.task_management_system.dto.UpdateWorkItemResponse;
 import com.echt.task_management_system.entity.Project;
@@ -274,6 +275,34 @@ class CreateWorkItemServiceTest {
         assertThat(response.assignee()).isEqualTo("Assignee User");
         assertThat(workItem.getAssignee()).isSameAs(existingAssignee);
         verify(userRepository, never()).findById(any());
+    }
+
+    @Test
+    void deleteRemovesExistingWorkItem() {
+        UUID workItemId = UUID.randomUUID();
+        WorkItem workItem = workItem(workItemId, null);
+
+        when(workItemRepository.findById(workItemId)).thenReturn(Optional.of(workItem));
+
+        DeleteWorkItemResponse response = createWorkItemService.delete(workItemId);
+
+        assertThat(response.id()).isEqualTo(workItemId);
+        assertThat(response.itemKey()).isEqualTo("SCRUM-123456");
+        assertThat(response.message()).isEqualTo("Work item deleted successfully");
+        verify(workItemRepository).delete(workItem);
+    }
+
+    @Test
+    void deleteFailsWhenWorkItemDoesNotExist() {
+        UUID workItemId = UUID.randomUUID();
+
+        when(workItemRepository.findById(workItemId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> createWorkItemService.delete(workItemId))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Work item not found");
+
+        verify(workItemRepository, never()).delete(any());
     }
 
     private Project project(String key) {
