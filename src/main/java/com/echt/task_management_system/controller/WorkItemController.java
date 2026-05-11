@@ -3,6 +3,7 @@ package com.echt.task_management_system.controller;
 import com.echt.task_management_system.Service.WorkItemService;
 import com.echt.task_management_system.dto.request.CreateWorkItemRequest;
 import com.echt.task_management_system.dto.request.UpdateWorkItemRequest;
+import com.echt.task_management_system.dto.response.BoardResponse;
 import com.echt.task_management_system.dto.response.WorkItemResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -110,4 +111,14 @@ public class WorkItemController {
         return ResponseEntity.ok(
                 workItemService.moveToBacklog(workItemId));
     }
+
+    @GetMapping("/projects/{projectId}/board")
+public ResponseEntity<BoardResponse> getBoard(
+        @PathVariable UUID projectId
+) {
+
+    return ResponseEntity.ok(
+            workItemService.getBoard(projectId)
+    );
+}
 }
