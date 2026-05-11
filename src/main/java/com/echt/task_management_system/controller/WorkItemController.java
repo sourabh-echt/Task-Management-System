@@ -112,6 +112,9 @@ public class WorkItemController {
                 workItemService.moveToBacklog(workItemId));
     }
 
+      @Operation(summary = "Get the task status", description = """
+           List all the task status in the project.
+            """)
     @GetMapping("/projects/{projectId}/board")
 public ResponseEntity<BoardResponse> getBoard(
         @PathVariable UUID projectId

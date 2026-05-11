@@ -27,6 +27,6 @@ public class WorkItemRequest {
     private UUID reporterId;
 
     private Integer storyPoints;
-
+    
     private LocalDate dueDate;
 }
