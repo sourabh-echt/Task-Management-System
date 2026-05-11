@@ -23,13 +23,13 @@ public class ProjectsController {
 
     private final ProjectService projectService;
 
-    @PostMapping
+    @PostMapping("/createProject")
     public CreateProjectResponse create(@Valid @RequestBody CreateProjectRequest request) {
         log.debug("Create project request received key={}", request.key());
         return projectService.create(request);
     }
 
-    @GetMapping
+    @GetMapping("/getAllProjects")
     public List<ProjectResponse> getAll() {
         return projectService.getAll();
     }
