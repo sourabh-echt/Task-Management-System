@@ -1,6 +1,7 @@
 package com.echt.task_management_system.common.response;
 
 public enum ErrorCode {
+    AUTHENTICATION_FAILED,
     BAD_REQUEST,
     DATA_INTEGRITY_VIOLATION,
     INTERNAL_SERVER_ERROR,

@@ -11,6 +11,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -82,6 +83,22 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 ErrorCode.BAD_REQUEST,
                 ex.getMessage()
+        );
+    }
+
+    /**
+     * Invalid login credentials
+     */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadCredentials(
+            BadCredentialsException ex
+    ) {
+
+        return error(
+                HttpStatus.UNAUTHORIZED,
+                "Invalid email or password",
+                ErrorCode.AUTHENTICATION_FAILED,
+                "Invalid email or password"
         );
     }
 
@@ -161,6 +178,14 @@ public class GlobalExceptionHandler {
             fieldErrors.put(
                     "priority",
                     "priority must be one of LOWEST, LOW, MEDIUM, HIGH, HIGHEST"
+            );
+        }
+
+        if (lower.contains("role")) {
+
+            fieldErrors.put(
+                    "role",
+                    "role must be one of ADMIN, PROJECT_MANAGER, DEVELOPER, TESTER, VIEWER"
             );
         }
 
