@@ -1,5 +1,7 @@
 package com.echt.task_management_system.entity;
 
+import com.echt.task_management_system.enums.Role;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,4 +21,11 @@ public class User extends BaseEntity {
 
     @Column(name = "display_name", length = 100)
     private String displayName;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 }
