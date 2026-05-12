@@ -5,6 +5,7 @@ import com.echt.task_management_system.dto.request.UserRegisterationDto;
 import com.echt.task_management_system.dto.response.JwtResponse;
 import com.echt.task_management_system.service.security.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,6 +24,7 @@ public class AuthController {
     
     @PostMapping("/login")
     @Operation(summary = "Login", description = "Authenticate with email and password to receive a JWT token.")
+    @SecurityRequirements
     public ResponseEntity<JwtResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
