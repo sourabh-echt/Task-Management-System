@@ -21,9 +21,19 @@ public class ApiResponseBodyAdvice implements ResponseBodyAdvice<Object> {
     }
 
     @Override
-    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
-                                  Class selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
-        if (body instanceof ApiResponse<?> || body instanceof ApiErrorResponse) {
+    public Object beforeBodyWrite(
+            Object body,
+            MethodParameter returnType,
+            MediaType selectedContentType,
+            Class selectedConverterType,
+            ServerHttpRequest request,
+            ServerHttpResponse response
+    ) {
+
+        // Prevent double wrapping
+        if (body instanceof ApiResponse<?>
+                || body instanceof ApiErrorResponse
+                || body instanceof com.echt.task_management_system.dto.response.ApiResponse<?>) {
             return body;
         }
 
@@ -31,19 +41,29 @@ public class ApiResponseBodyAdvice implements ResponseBodyAdvice<Object> {
                 ? servletResponse.getServletResponse().getStatus()
                 : HttpStatus.OK.value();
 
-        return ApiResponse.success(status, successMessage(request.getMethod()), body);
+        return ApiResponse.success(
+                status,
+                successMessage(request.getMethod()),
+                body
+        );
     }
 
     private String successMessage(HttpMethod method) {
+
         if (HttpMethod.POST.equals(method)) {
             return "Request created successfully";
         }
-        if (HttpMethod.PUT.equals(method) || HttpMethod.PATCH.equals(method)) {
+
+        if (HttpMethod.PUT.equals(method)
+                || HttpMethod.PATCH.equals(method)) {
+
             return "Request updated successfully";
         }
+
         if (HttpMethod.DELETE.equals(method)) {
             return "Request deleted successfully";
         }
+
         return "Request fetched successfully";
     }
 }

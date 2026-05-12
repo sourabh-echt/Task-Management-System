@@ -19,7 +19,4 @@ public class User extends BaseEntity {
 
     @Column(name = "display_name", length = 100)
     private String displayName;
-
-    @Column(name = "avatar_url", length = 500)
-    private String avatarUrl;
 }

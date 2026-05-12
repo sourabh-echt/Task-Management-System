@@ -9,10 +9,11 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Data
-public class CreateWorkItemRequest {
+public class    CreateWorkItemRequest {
 
     /** Required Space ID */
     @NotNull(message = "Space is required")
@@ -20,6 +21,10 @@ public class CreateWorkItemRequest {
 
     /** Optional — if null the item goes to the backlog */
     private UUID sprintId;
+
+    private UUID parentId;
+
+    private UUID teamId;
 
     @NotNull(message = "Work type is required")
     private WorkItem.WorkType workType;
@@ -50,6 +55,10 @@ public class CreateWorkItemRequest {
     private UUID reporterId;
 
     private Integer storyPoints;
+
+    private List<@Size(max = 100, message = "Label must be at most 100 characters") String> labels;
+
+    private LocalDate startDate;
 
     private LocalDate dueDate;
 }

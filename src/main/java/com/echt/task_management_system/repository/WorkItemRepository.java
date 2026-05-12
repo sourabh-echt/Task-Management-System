@@ -18,8 +18,12 @@ public interface WorkItemRepository extends JpaRepository<WorkItem, UUID> {
         SELECT DISTINCT w FROM WorkItem w
         LEFT JOIN FETCH w.project
         LEFT JOIN FETCH w.sprint
+        LEFT JOIN FETCH w.parent
+        LEFT JOIN FETCH w.team t
+        LEFT JOIN FETCH t.teamMembers
         LEFT JOIN FETCH w.assignee
         LEFT JOIN FETCH w.reporter
+        LEFT JOIN FETCH w.attachments
         WHERE w.id = :workItemId
     """)
     Optional<WorkItem> findByIdWithDetails(
@@ -40,6 +44,8 @@ public interface WorkItemRepository extends JpaRepository<WorkItem, UUID> {
     List<WorkItem> findBySprintId(UUID sprintId);
 
     List<WorkItem> findByProjectId(UUID projectId);
+
+    List<WorkItem> findByWorkTypeOrderByCreatedAtDesc(WorkItem.WorkType workType);
 
     boolean existsByItemKey(String itemKey);
 

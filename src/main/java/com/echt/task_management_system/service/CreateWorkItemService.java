@@ -4,12 +4,15 @@ import com.echt.task_management_system.dto.request.CreateWorkItemRequest;
 import com.echt.task_management_system.dto.request.UpdateWorkItemRequest;
 import com.echt.task_management_system.dto.response.CreateWorkItemResponse;
 import com.echt.task_management_system.dto.response.DeleteWorkItemResponse;
+import com.echt.task_management_system.dto.response.ParentOptionResponse;
 import com.echt.task_management_system.dto.response.UpdateWorkItemResponse;
 import com.echt.task_management_system.dto.response.WorkItemListResponse;
 import com.echt.task_management_system.entity.Project;
 import com.echt.task_management_system.entity.User;
 import com.echt.task_management_system.entity.WorkItem;
 import com.echt.task_management_system.repository.ProjectRepository;
+import com.echt.task_management_system.repository.SprintRepository;
+import com.echt.task_management_system.repository.TeamRepository;
 import com.echt.task_management_system.repository.UserRepository;
 import com.echt.task_management_system.repository.WorkItemRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -29,6 +32,8 @@ public class CreateWorkItemService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final WorkItemRepository workItemRepository;
+    private final SprintRepository sprintRepository;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public CreateWorkItemResponse create(CreateWorkItemRequest request) {
@@ -49,7 +54,11 @@ public class CreateWorkItemService {
 
         WorkItem workItem = WorkItem.builder()
                 .project(project)
-                .sprint(null) // backlog
+                .sprint(request.getSprintId() == null ? null : sprintRepository.findById(request.getSprintId())
+                        .orElseThrow(() -> new EntityNotFoundException("Sprint not found for id=" + request.getSprintId())))
+                .parent(resolveParent(request))
+                .team(request.getTeamId() == null ? null : teamRepository.findById(request.getTeamId())
+                        .orElseThrow(() -> new EntityNotFoundException("Team not found for id=" + request.getTeamId())))
                 .itemKey(itemKey)
                 .workType(request.getWorkType())
                 .summary(request.getSummary())
@@ -59,6 +68,8 @@ public class CreateWorkItemService {
                 .assignee(assignee)
                 .reporter(reporter)
                 .storyPoints(request.getStoryPoints())
+                .labels(normalizeLabels(request.getLabels()))
+                .startDate(request.getStartDate())
                 .dueDate(request.getDueDate())
                 .build();
 
@@ -92,6 +103,7 @@ public class CreateWorkItemService {
                 userLabel(workItem.getReporter(), "Unassigned"),
                 workItem.getPriority(),
                 workItem.getStatus(),
+                workItem.getDueDate(),
                 workItem.getCreatedAt(),
                 workItem.getUpdatedAt()
         );
@@ -114,6 +126,26 @@ public class CreateWorkItemService {
         }
         if (assigneeId != null) {
             workItem.setAssignee(resolveUser(assigneeId, "Assignee"));
+        }
+        if (request.getLabels() != null) {
+            workItem.setLabels(normalizeLabels(request.getLabels()));
+        }
+        if (request.getStartDate() != null) {
+            workItem.setStartDate(request.getStartDate());
+        }
+        if (request.getDueDate() != null) {
+            workItem.setDueDate(request.getDueDate());
+        }
+        if (request.getSprintId() != null) {
+            workItem.setSprint(sprintRepository.findById(request.getSprintId())
+                    .orElseThrow(() -> new EntityNotFoundException("Sprint not found for id=" + request.getSprintId())));
+        }
+        if (request.getParentId() != null) {
+            workItem.setParent(resolveParent(request));
+        }
+        if (request.getTeamId() != null) {
+            workItem.setTeam(teamRepository.findById(request.getTeamId())
+                    .orElseThrow(() -> new EntityNotFoundException("Team not found for id=" + request.getTeamId())));
         }
 
         WorkItem saved = workItemRepository.save(workItem);
@@ -171,5 +203,66 @@ public class CreateWorkItemService {
             candidate = prefix + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
         } while (workItemRepository.existsByItemKey(candidate));
         return candidate;
+    }
+
+    private WorkItem resolveParent(CreateWorkItemRequest request) {
+        if (request.getParentId() == null) {
+            return null;
+        }
+        WorkItem parent = workItemRepository.findById(request.getParentId())
+                .orElseThrow(() -> new EntityNotFoundException("Parent work item not found for id=" + request.getParentId()));
+        validateParent(request.getWorkType(), parent);
+        return parent;
+    }
+
+    private WorkItem resolveParent(UpdateWorkItemRequest request) {
+        if (request.getParentId() == null) {
+            return null;
+        }
+        WorkItem parent = workItemRepository.findById(request.getParentId())
+                .orElseThrow(() -> new EntityNotFoundException("Parent work item not found for id=" + request.getParentId()));
+        if (parent.getWorkType() != WorkItem.WorkType.EPIC) {
+            throw new IllegalStateException("Story and task parent must be an epic.");
+        }
+        return parent;
+    }
+
+    private void validateParent(WorkItem.WorkType workType, WorkItem parent) {
+        if (workType == WorkItem.WorkType.EPIC) {
+            throw new IllegalStateException("Epic work items cannot have a parent.");
+        }
+        if ((workType == WorkItem.WorkType.STORY || workType == WorkItem.WorkType.TASK)
+                && parent.getWorkType() != WorkItem.WorkType.EPIC) {
+            throw new IllegalStateException("Story and task parent must be an epic.");
+        }
+    }
+
+    private List<String> normalizeLabels(List<String> labels) {
+        if (labels == null) {
+            return List.of();
+        }
+        return labels.stream()
+                .filter(label -> label != null && !label.isBlank())
+                .map(String::trim)
+                .distinct()
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ParentOptionResponse> getParentOptions(WorkItem.WorkType workType) {
+        if (workType == WorkItem.WorkType.EPIC) {
+            return List.of();
+        }
+        if (workType != WorkItem.WorkType.STORY && workType != WorkItem.WorkType.TASK) {
+            return List.of();
+        }
+        return workItemRepository.findByWorkTypeOrderByCreatedAtDesc(WorkItem.WorkType.EPIC).stream()
+                .map(item -> new ParentOptionResponse(
+                        item.getId(),
+                        item.getItemKey(),
+                        item.getWorkType(),
+                        item.getSummary()
+                ))
+                .toList();
     }
 }
