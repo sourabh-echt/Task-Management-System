@@ -1,6 +1,5 @@
 package com.echt.task_management_system.dto.response;
 
-
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,8 +7,9 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class UserSummaryResponse {
+public class AttachmentResponse {
     private UUID id;
-    private String username;
-    private String displayName;
+    private String filename;
+    private String fileUrl;
+    private Long fileSize;
 }

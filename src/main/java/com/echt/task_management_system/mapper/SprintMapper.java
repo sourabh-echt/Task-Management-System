@@ -133,7 +133,6 @@ public class SprintMapper {
                 .id(user.getId())
                 .username(user.getUsername())
                 .displayName(user.getDisplayName())
-                .avatarUrl(user.getAvatarUrl())
                 .build();
     }
 }

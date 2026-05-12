@@ -32,6 +32,14 @@ public class WorkItem extends BaseEntity {
     @JoinColumn(name = "sprint_id")
     private Sprint sprint;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private WorkItem parent;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
+    private Team team;
+
     @Column(name = "item_key", nullable = false, unique = true, length = 20)
     private String itemKey;
 
@@ -63,6 +71,18 @@ public class WorkItem extends BaseEntity {
 
     @Column(name = "story_points")
     private Integer storyPoints;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "work_item_labels",
+            joinColumns = @JoinColumn(name = "work_item_id")
+    )
+    @Column(name = "label", nullable = false, length = 100)
+    @Builder.Default
+    private List<String> labels = new ArrayList<>();
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
 
     @Column(name = "due_date")
     private LocalDate dueDate;

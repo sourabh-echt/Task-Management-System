@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -31,10 +32,18 @@ public class UpdateWorkItemRequest {
 
     private Integer storyPoints;
 
+    private List<@Size(max = 100, message = "Label must be at most 100 characters") String> labels;
+
+    private LocalDate startDate;
+
     private LocalDate dueDate;
 
     /** null = move to backlog */
     private UUID sprintId;
 
     private WorkItem.WorkType workType;
+
+    private UUID parentId;
+
+    private UUID teamId;
 }

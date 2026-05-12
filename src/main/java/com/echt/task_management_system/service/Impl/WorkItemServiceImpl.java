@@ -13,6 +13,7 @@ import com.echt.task_management_system.entity.WorkItem;
 import com.echt.task_management_system.mapper.WorkItemMapper;
 import com.echt.task_management_system.repository.ProjectRepository;
 import com.echt.task_management_system.repository.SprintRepository;
+import com.echt.task_management_system.repository.TeamRepository;
 import com.echt.task_management_system.repository.UserRepository;
 import com.echt.task_management_system.repository.WorkItemRepository;
 
@@ -39,6 +40,8 @@ public class WorkItemServiceImpl
     private final SprintRepository sprintRepository;
 
     private final UserRepository userRepository;
+
+    private final TeamRepository teamRepository;
 
     private final WorkItemMapper workItemMapper;
 
@@ -71,12 +74,19 @@ public class WorkItemServiceImpl
                         request.getReporterId()
                 );
 
+        WorkItem parent = getParentIfPresent(request.getParentId());
+        validateParent(request.getWorkType(), parent);
+
         WorkItem workItem =
                 WorkItem.builder()
 
                         .project(project)
 
                         .sprint(sprint)
+
+                        .parent(parent)
+
+                        .team(getTeamIfPresent(request.getTeamId()))
 
                         .itemKey(
                                 generateItemKey(project)
@@ -108,6 +118,12 @@ public class WorkItemServiceImpl
 
                         .storyPoints(
                                 request.getStoryPoints()
+                        )
+
+                        .labels(normalizeLabels(request.getLabels()))
+
+                        .startDate(
+                                request.getStartDate()
                         )
 
                         .dueDate(
@@ -176,10 +192,36 @@ public class WorkItemServiceImpl
             );
         }
 
+        if (request.getLabels() != null) {
+            workItem.setLabels(normalizeLabels(request.getLabels()));
+        }
+
+        if (request.getStartDate() != null) {
+            workItem.setStartDate(
+                    request.getStartDate()
+            );
+        }
+
         if (request.getDueDate() != null) {
             workItem.setDueDate(
                     request.getDueDate()
             );
+        }
+
+        if (request.getSprintId() != null) {
+            Sprint sprint = findSprint(request.getSprintId());
+            validateSprintProject(workItem.getProject(), sprint);
+            workItem.setSprint(sprint);
+        }
+
+        if (request.getParentId() != null) {
+            WorkItem parent = findWorkItem(request.getParentId());
+            validateParent(workItem.getWorkType(), parent);
+            workItem.setParent(parent);
+        }
+
+        if (request.getTeamId() != null) {
+            workItem.setTeam(getTeamIfPresent(request.getTeamId()));
         }
 
         if (request.getAssigneeId() != null) {
@@ -425,6 +467,21 @@ public class WorkItemServiceImpl
         return findSprint(sprintId);
     }
 
+    private WorkItem getParentIfPresent(UUID parentId) {
+        if (parentId == null) {
+            return null;
+        }
+        return findWorkItem(parentId);
+    }
+
+    private com.echt.task_management_system.entity.Team getTeamIfPresent(UUID teamId) {
+        if (teamId == null) {
+            return null;
+        }
+        return teamRepository.findById(teamId)
+                .orElseThrow(() -> new EntityNotFoundException("Team not found: " + teamId));
+    }
+
     private void validateSprintProject(
             Project project,
             Sprint sprint
@@ -442,6 +499,31 @@ public class WorkItemServiceImpl
                     "Sprint belongs to another project."
             );
         }
+    }
+
+    private void validateParent(WorkItem.WorkType workType, WorkItem parent) {
+        if (parent == null) {
+            return;
+        }
+        if (workType == WorkItem.WorkType.EPIC) {
+            throw new IllegalStateException("Epic work items cannot have a parent.");
+        }
+        if (workType == WorkItem.WorkType.STORY || workType == WorkItem.WorkType.TASK) {
+            if (parent.getWorkType() != WorkItem.WorkType.EPIC) {
+                throw new IllegalStateException("Story and task parent must be an epic.");
+            }
+        }
+    }
+
+    private List<String> normalizeLabels(List<String> labels) {
+        if (labels == null) {
+            return List.of();
+        }
+        return labels.stream()
+                .filter(label -> label != null && !label.isBlank())
+                .map(String::trim)
+                .distinct()
+                .toList();
     }
 
     private void validateSprintAssignment(

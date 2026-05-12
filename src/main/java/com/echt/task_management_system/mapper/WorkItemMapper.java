@@ -1,8 +1,12 @@
 package com.echt.task_management_system.mapper;
 
+import com.echt.task_management_system.dto.response.AttachmentResponse;
+import com.echt.task_management_system.dto.response.TeamResponse;
 import com.echt.task_management_system.dto.response.UserSummaryResponse;
 import com.echt.task_management_system.dto.response.WorkItemResponse;
+import com.echt.task_management_system.entity.Attachment;
 import com.echt.task_management_system.entity.Sprint;
+import com.echt.task_management_system.entity.Team;
 import com.echt.task_management_system.entity.User;
 import com.echt.task_management_system.entity.WorkItem;
 
@@ -27,17 +31,11 @@ public class WorkItemMapper {
                 .projectId(workItem.getProject().getId())
                 .projectKey(workItem.getProject().getKey())
 
-                .sprintId(
-                        sprint != null
-                                ? sprint.getId()
-                                : null
-                )
+                .parent(toParentSummary(workItem.getParent()))
 
-                .sprintName(
-                        sprint != null
-                                ? sprint.getName()
-                                : null
-                )
+                .sprint(toSprintSummary(sprint))
+
+                .team(toTeamSummary(workItem.getTeam()))
 
                 .assignee(
                         toUserSummary(workItem.getAssignee())
@@ -48,7 +46,12 @@ public class WorkItemMapper {
                 )
 
                 .storyPoints(workItem.getStoryPoints())
+                .labels(workItem.getLabels())
+                .startDate(workItem.getStartDate())
                 .dueDate(workItem.getDueDate())
+                .attachment(workItem.getAttachments().stream()
+                        .map(this::toAttachmentResponse)
+                        .toList())
 
                 .createdAt(workItem.getCreatedAt())
                 .updatedAt(workItem.getUpdatedAt())
@@ -66,7 +69,53 @@ public class WorkItemMapper {
             .id(user.getId())
             .username(user.getUsername())
             .displayName(user.getDisplayName())
-            .avatarUrl(user.getAvatarUrl())
             .build();
 }
+
+    private WorkItemResponse.WorkItemParentResponse toParentSummary(WorkItem parent) {
+        if (parent == null) {
+            return null;
+        }
+        return new WorkItemResponse.WorkItemParentResponse(
+                parent.getId(),
+                parent.getItemKey(),
+                parent.getWorkType(),
+                parent.getSummary()
+        );
+    }
+
+    private WorkItemResponse.SprintSummaryResponse toSprintSummary(Sprint sprint) {
+        if (sprint == null) {
+            return null;
+        }
+        return new WorkItemResponse.SprintSummaryResponse(sprint.getId(), sprint.getName());
+    }
+
+    private TeamResponse toTeamSummary(Team team) {
+        if (team == null) {
+            return null;
+        }
+        return TeamResponse.builder()
+                .teamId(team.getId())
+                .teamName(team.getTeamName())
+                .teamMembers(team.getTeamMembers().stream()
+                        .map(user -> new TeamResponse.Member(
+                                user.getId(),
+                                user.getDisplayName() != null && !user.getDisplayName().isBlank()
+                                        ? user.getDisplayName()
+                                        : user.getUsername(),
+                                user.getEmail()
+                        ))
+                        .toList())
+                .build();
+    }
+
+    private AttachmentResponse toAttachmentResponse(Attachment attachment) {
+        return AttachmentResponse.builder()
+                .id(attachment.getId())
+                .filename(attachment.getFilename())
+                .fileUrl(attachment.getFileUrl())
+                .fileSize(attachment.getFileSize())
+                .build();
+    }
 }

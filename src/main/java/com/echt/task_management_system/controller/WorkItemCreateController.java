@@ -5,8 +5,10 @@ import com.echt.task_management_system.dto.request.UpdateWorkItemRequest;
 import com.echt.task_management_system.dto.response.ApiResponse;
 import com.echt.task_management_system.dto.response.CreateWorkItemResponse;
 import com.echt.task_management_system.dto.response.DeleteWorkItemResponse;
+import com.echt.task_management_system.dto.response.ParentOptionResponse;
 import com.echt.task_management_system.dto.response.UpdateWorkItemResponse;
 import com.echt.task_management_system.dto.response.WorkItemListResponse;
+import com.echt.task_management_system.entity.WorkItem;
 import com.echt.task_management_system.service.CreateWorkItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -39,26 +42,33 @@ public class WorkItemCreateController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(createWorkItemService.create(request)));
     }
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<WorkItemListResponse>>> getAll() {
-        log.debug("GET /work-items");
-        return ResponseEntity.ok(ApiResponse.ok(createWorkItemService.getAll()));
-    }
+//    @GetMapping
+//    public ResponseEntity<ApiResponse<List<WorkItemListResponse>>> getAll() {
+//        log.debug("GET /work-items");
+//        return ResponseEntity.ok(ApiResponse.ok(createWorkItemService.getAll()));
+//    }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<UpdateWorkItemResponse>> update(
-            @PathVariable UUID id,
-            @Valid @RequestBody UpdateWorkItemRequest request
+    @GetMapping("/parent-options")
+    public ResponseEntity<ApiResponse<List<ParentOptionResponse>>> getParentOptions(
+            @RequestParam WorkItem.WorkType workType
     ) {
-        log.debug("PATCH /work-items/{} status={} priority={} assigneeId={}",
-                id, request.getStatus(), request.getPriority(), request.getAssigneeId());
-        return ResponseEntity.ok(ApiResponse.ok(createWorkItemService.update(id, request)));
+        return ResponseEntity.ok(ApiResponse.ok(createWorkItemService.getParentOptions(workType)));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<DeleteWorkItemResponse>> delete(@PathVariable UUID id) {
-        log.debug("DELETE /work-items/{}", id);
-        return ResponseEntity.ok(ApiResponse.ok(createWorkItemService.delete(id)));
-    }
+//    @PatchMapping("/{id}")
+//    public ResponseEntity<ApiResponse<UpdateWorkItemResponse>> update(
+//            @PathVariable UUID id,
+//            @Valid @RequestBody UpdateWorkItemRequest request
+//    ) {
+//        log.debug("PATCH /work-items/{} status={} priority={} assigneeId={}",
+//                id, request.getStatus(), request.getPriority(), request.getAssigneeId());
+//        return ResponseEntity.ok(ApiResponse.ok(createWorkItemService.update(id, request)));
+//    }
+
+//    @DeleteMapping("/{id}")
+//    public ResponseEntity<ApiResponse<DeleteWorkItemResponse>> delete(@PathVariable UUID id) {
+//        log.debug("DELETE /work-items/{}", id);
+//        return ResponseEntity.ok(ApiResponse.ok(createWorkItemService.delete(id)));
+//    }
 
 }
